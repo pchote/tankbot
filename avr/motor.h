@@ -11,7 +11,6 @@
 #define TANKBOT_MOTOR_H
 
 void motor_initialize();
-void motor_set_left_speed(double fraction);
-void motor_set_right_speed(double fraction);
+void motor_set_speeds(uint16_t left, uint16_t right);
 
 #endif

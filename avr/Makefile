@@ -17,7 +17,7 @@ all: main.hex reset
 reset:
 	$(CC) -o $@ reset.c
 
-install: main.hex
+install: main.hex reset
 	TERM=vt100 ./reset $(PORT)
 	$(AVRDUDE) -U flash:w:main.hex:i
 

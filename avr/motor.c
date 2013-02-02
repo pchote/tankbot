@@ -8,12 +8,17 @@
 //*****************************************************************************
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include "motor.h"
+#include "serial.h"
+
+const char debug_speed_fmt[] PROGMEM = "Speed set to %u%%, %u%%";
 
 // PWM limits measured from a RC receiver
 // TODO: Investigate whether these limits make the most of the ESC input range
 #define SPEED_MIN 1760U
 #define SPEED_MAX 3999U
+#define SPEED_SCALE ((SPEED_MAX - SPEED_MIN) / 65535.0)
 
 void motor_initialize()
 {    
@@ -29,25 +34,13 @@ void motor_initialize()
     DDRB |= _BV(PB5) | _BV(PB6);
 }
 
-
 // Left motor on ArduPilot Mega output channel 1 (PB6)
-void motor_set_left_speed(double fraction)
-{
-    if (fraction > 1)
-        fraction = 1;
-    if (fraction < 0)
-        fraction = 0;
-
-    OCR1B = SPEED_MIN + (uint16_t)(fraction*(SPEED_MAX - SPEED_MIN));
-}
-
 // Right motor on ArduPilot Mega output channel 2 (PB5)
-void motor_set_right_speed(double fraction)
+void motor_set_speeds(uint16_t left, uint16_t right)
 {
-    if (fraction > 1)
-        fraction = 1;
-    if (fraction < 0)
-        fraction = 0;
+    OCR1B = SPEED_MIN + (uint16_t)(SPEED_SCALE*left);
+    OCR1A = SPEED_MIN + (uint16_t)(SPEED_SCALE*right);
 
-    OCR1A = SPEED_MIN + (uint16_t)(fraction*(SPEED_MAX - SPEED_MIN));
+    const double to_percent = 100.0/65535.0;
+    serial_message_fmt_P(debug_speed_fmt, (uint8_t)(left*to_percent), (uint8_t)(right*to_percent));
 }
