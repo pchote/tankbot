@@ -263,9 +263,8 @@ bool avr_thread_alive(struct avr *avr)
 void avr_set_speed(struct avr *avr, double left, double right)
 {
     struct packet_speed speed = {
-        .left  = (uint16_t)(left*65535),
-        .right = (uint16_t)(right*65535)
+        .left = (uint16_t)(10000*left),
+        .right = (uint16_t)(10000*right)
     };
-    printf("Updating speed to %g %g\n", left, right);
     queue_data(avr, SPEED, &speed, sizeof(struct packet_speed));
 }

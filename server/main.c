@@ -23,11 +23,11 @@ int main(int argc, char *argv[])
     while (avr_thread_alive(avr))
     {
         sleep(5);
-        avr_set_speed(avr, 0.1, 0.1);
+        avr_set_speed(avr, 0.1, 0.13);
         sleep(3);
-        avr_set_speed(avr, 0.5, 0.5);
+        avr_set_speed(avr, 0.5, 0.47);
         sleep(3);
-        avr_set_speed(avr, 0.1, 0.1);
+        avr_set_speed(avr, 0.1, 2.0);
         sleep(3);
         avr_set_speed(avr, 0.0, 0.0);
 

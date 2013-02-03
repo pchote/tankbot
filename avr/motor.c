@@ -18,7 +18,8 @@ const char debug_speed_fmt[] PROGMEM = "Speed set to %u%%, %u%%";
 // TODO: Investigate whether these limits make the most of the ESC input range
 #define SPEED_MIN 1760U
 #define SPEED_MAX 3999U
-#define SPEED_SCALE ((SPEED_MAX - SPEED_MIN) / 65535.0)
+#define CLAMP(x, min, max) (((x) >= (max)) ? (max) : (((x) <= (min)) ? (min) : (x)))
+#define MAP_SPEED(x) (uint16_t)(SPEED_MIN + ((uint32_t)(x)*(SPEED_MAX - SPEED_MIN) / 10000))
 
 void motor_initialize()
 {    
@@ -36,11 +37,13 @@ void motor_initialize()
 
 // Left motor on ArduPilot Mega output channel 1 (PB6)
 // Right motor on ArduPilot Mega output channel 2 (PB5)
+// left and right use 0 - 10000 to represent fixed point values 0 - 1.0000
 void motor_set_speeds(uint16_t left, uint16_t right)
 {
-    OCR1B = SPEED_MIN + (uint16_t)(SPEED_SCALE*left);
-    OCR1A = SPEED_MIN + (uint16_t)(SPEED_SCALE*right);
+    left = CLAMP(left, 0, 10000);
+    right = CLAMP(right, 0, 10000);
+    OCR1B = MAP_SPEED(left);
+    OCR1A = MAP_SPEED(right);
 
-    const double to_percent = 100.0/65535.0;
-    serial_message_fmt_P(debug_speed_fmt, (uint8_t)(left*to_percent), (uint8_t)(right*to_percent));
+    serial_message_fmt_P(debug_speed_fmt, (uint8_t)(left / 100), (uint8_t)(right / 100));
 }

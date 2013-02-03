@@ -21,6 +21,7 @@ enum packet_type
 
 struct __attribute__((__packed__)) packet_speed
 {
+    // using 0 - 10000 to represent fixed point values 0 - 1.0000
     uint16_t left;
     uint16_t right;
 };
