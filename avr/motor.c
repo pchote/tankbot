@@ -9,14 +9,15 @@
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 #include "motor.h"
 #include "serial.h"
 
 const char debug_speed_fmt[] PROGMEM = "Speed set to %u%%, %u%%";
 
 // PWM limits measured from a RC receiver
-// TODO: Investigate whether these limits make the most of the ESC input range
-#define SPEED_MIN 1760U
+// 0.95ms - 2ms
+#define SPEED_MIN 1900U
 #define SPEED_MAX 3999U
 #define CLAMP(x, min, max) (((x) >= (max)) ? (max) : (((x) <= (min)) ? (min) : (x)))
 #define MAP_SPEED(x) (uint16_t)(SPEED_MIN + ((uint32_t)(x)*(SPEED_MAX - SPEED_MIN) / 10000))
@@ -33,6 +34,7 @@ void motor_initialize()
     OCR1A = SPEED_MIN;
     OCR1B = SPEED_MIN;
     DDRB |= _BV(PB5) | _BV(PB6);
+    _delay_ms(2000);
 }
 
 // Left motor on ArduPilot Mega output channel 1 (PB6)

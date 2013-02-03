@@ -22,14 +22,15 @@ int main(int argc, char *argv[])
 
     while (avr_thread_alive(avr))
     {
-        sleep(5);
-        avr_set_speed(avr, 0.1, 0.13);
+        sleep(4);
+        avr_set_speed(avr, 0.2, 0.3);
+        avr_set_speed(avr, 0.2, 0.3);
         sleep(3);
-        avr_set_speed(avr, 0.5, 0.47);
+        avr_set_speed(avr, 0.0, 0.4);
         sleep(3);
-        avr_set_speed(avr, 0.1, 2.0);
+        avr_set_speed(avr, 0.3, 0.3);
         sleep(3);
-        avr_set_speed(avr, 0.0, 0.0);
+        avr_set_speed(avr, 0.2, 0.0);
 
         // Sleep for 100ms
         nanosleep(&(struct timespec){0, 1e8}, NULL);
