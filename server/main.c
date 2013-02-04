@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[])
 {
-    struct avr *avr = avr_new("/dev/tty.usbmodem621", 115200);
+    struct avr *avr = avr_new("/dev/tty.iap", 115200);
     if (!avr)
     {
         printf("Failed to initialize AVR connection\n");

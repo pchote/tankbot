@@ -1,15 +1,9 @@
-CC       = gcc
-CFLAGS   = -g -Wall -Wno-unknown-pragmas --std=c99
-LFLAGS   = -lpthread -lm
-OBJS     = main.o avr.o serial.o
+THEOS_DEVICE_IP = 10.0.2.3
 
-all: server
+include theos/makefiles/common.mk
 
-server: $(OBJS)
-	$(CC) -o $@ $(OBJS) $(LFLAGS)
+TOOL_NAME = tankbotserver
+tankbotserver_FILES = main.c avr.c serial.c
+ADDITIONAL_CFLAGS = -std=c99
 
-clean:
-	-rm $(OBJS) server
-
-%.o : %.c
-	$(CC) -c $(CFLAGS) $<
+include $(THEOS_MAKE_PATH)/tool.mk

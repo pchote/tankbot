@@ -1,0 +1,10 @@
+Package: net.chote.paul.tankbot-server
+Name: tankbot-server
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Tankbot control server
+Maintainer: Paul Chote
+Author: Paul Chote
+Section: System
+Tag: role::hacker
