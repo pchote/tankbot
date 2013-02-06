@@ -163,10 +163,10 @@ void serial_tick()
     static union packet_data data;
 
     while (byte_available())
-	{
+    {
         uint8_t b = read_byte();
         switch (state)
-		{
+        {
         case 0: // Frame start characters
         case 1:
             if (b == '$')
@@ -191,36 +191,36 @@ void serial_tick()
                 state = 0;
             }
             break;
-		case 4: // Message data
+        case 4: // Message data
             checksum ^= b;
             data.bytes[read++] = b;
-			if (read == length)
-				state++;
+            if (read == length)
+                state++;
             break;
         case 5: // checksum byte
-			if (checksum == b)
-				state++;
-			else
-			{
-				serial_message_fmt_P(checksum_failed_fmt, b, checksum);
-				state = 0;
-			}
+            if (checksum == b)
+                state++;
+            else
+            {
+                serial_message_fmt_P(checksum_failed_fmt, b, checksum);
+                state = 0;
+            }
             break;
         case 6: // Frame end bytes
             if (b == '\r')
                 state++;
             else
             {
-				serial_message_fmt_P(invalid_packet_fmt, b, '\r');
-				state = 0;
+                serial_message_fmt_P(invalid_packet_fmt, b, '\r');
+                state = 0;
             }
             break;
         case 7:
             if (b == '\n')
                 parse_packet(type, data);
             else
-				serial_message_fmt_P(invalid_packet_fmt, b, '\n');
-			state = 0;
+                serial_message_fmt_P(invalid_packet_fmt, b, '\n');
+            state = 0;
             break;
         }
     }

@@ -179,22 +179,22 @@ static void *avr_thread(void *_avr)
         uint8_t b;
         ssize_t r;
         while ((r = serial_port_read(port, &b, 1)) > 0)
-    	{
+        {
             switch (state)
-    		{
-	        case 0: // Synchronize to packet header
-	        case 1:
-	            if (b == '$')
-	                state++;
+            {
+            case 0: // Synchronize to packet header
+            case 1:
+                if (b == '$')
+                    state++;
                 else
                     state = 0;
-	            break;
-	        case 2: // Packet type
-	            type = b;
+                break;
+            case 2: // Packet type
+                type = b;
                 state++;
-	            break;
-	        case 3: // Message length
-	            length = b;
+                break;
+            case 3: // Message length
+                length = b;
                 read = 0;
                 checksum = 0;
                 if (length <= sizeof(data))
@@ -204,38 +204,38 @@ static void *avr_thread(void *_avr)
                     printf("Ignoring long packet: %c (length %u)\n", type, length);
                     state = 0;
                 }
-	            break;
-			case 4: // Message data
+                break;
+            case 4: // Message data
                 checksum ^= b;
                 data.bytes[read++] = b;
-				if (read == length)
-					state++;
-	            break;
-	        case 5: // checksum byte
-				if (checksum == b)
-					state++;
-				else
-				{
-					printf("Packet checksum failed. Got 0x%02x, expected 0x%02x.\n", b, checksum);
-					state = 0;
-				}
-	            break;
-	        case 6: // Packet Footer
-	            if (b == '\r')
-	                state++;
+                if (read == length)
+                    state++;
+                break;
+            case 5: // checksum byte
+                if (checksum == b)
+                    state++;
                 else
                 {
-					printf("Invalid packet end byte. Got 0x%02x, expected 0x%02x.\n", b, '\r');
-					state = 0;
+                    printf("Packet checksum failed. Got 0x%02x, expected 0x%02x.\n", b, checksum);
+                    state = 0;
+                }
+                break;
+            case 6: // Packet Footer
+                if (b == '\r')
+                    state++;
+                else
+                {
+                    printf("Invalid packet end byte. Got 0x%02x, expected 0x%02x.\n", b, '\r');
+                    state = 0;
                 }
                 break;
             case 7:
-	            if (b == '\n')
+                if (b == '\n')
                     parse_packet(avr, type, data, length);
                 else
-					printf("Invalid packet end byte. Got 0x%02x, expected 0x%02x.\n", b, '\n');
+                    printf("Invalid packet end byte. Got 0x%02x, expected 0x%02x.\n", b, '\n');
 
-				state = 0;
+                state = 0;
                 break;
             }
         }
