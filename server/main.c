@@ -9,8 +9,14 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+
 #include "avr.h"
 #include "serial.h"
+#include "webserver.h"
+
+
+struct avr *avr;
+struct webserver *webserver;
 
 bool force_shutdown = false;
 void shutdown_handler(int foo)
@@ -22,14 +28,22 @@ int main(int argc, char *argv[])
 {
     signal(SIGINT, shutdown_handler);
 
-    struct avr *avr = avr_new("/dev/tty.iap", 115200);
+    avr = avr_new("/dev/tty.iap", 115200);
     if (!avr)
     {
         printf("Failed to initialize AVR connection\n");
         return 1;
     }
 
-    while (avr_thread_alive(avr))
+    webserver = webserver_create(7681);
+    if (!webserver)
+    {
+        printf("Failed to initialize webserver\n");
+        return 1;
+    }
+
+    int n = 0;
+    while (n >= 0)
     {
         if (!avr_thread_alive(avr))
         {
@@ -44,9 +58,10 @@ int main(int argc, char *argv[])
             break;
         }
 
-        // Sleep for 100ms
-        nanosleep(&(struct timespec){0, 1e8}, NULL);
+        n = webserver_tick(webserver, 50);
     }
+
+    webserver_free(webserver);
 
     avr_free(avr);
     printf("Exiting cleanly\n");

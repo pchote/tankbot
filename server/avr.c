@@ -21,8 +21,10 @@
 
 #include "avr.h"
 #include "serial.h"
+#include "webserver.h"
 #include "../protocol.h"
 
+extern struct webserver *webserver;
 struct avr
 {
     pthread_t thread;
@@ -116,6 +118,9 @@ static void parse_packet(struct avr *avr, enum packet_type type, union packet_da
             printf("AVR Message: ");
             for (uint8_t i = 0; i < length; i++)
                 putchar(data.debug.message[i]);
+
+            // TODO: Relying on an extern global isn't great.
+            webserver_send_debug(webserver, data.debug.message, length);
             printf("\n");
         }
         break;
