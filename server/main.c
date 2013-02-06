@@ -7,12 +7,21 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 #include <time.h>
 #include "avr.h"
 #include "serial.h"
 
+bool force_shutdown = false;
+void shutdown_handler(int foo)
+{
+    force_shutdown = true;
+}
+
 int main(int argc, char *argv[])
 {
+    signal(SIGINT, shutdown_handler);
+
     struct avr *avr = avr_new("/dev/tty.iap", 115200);
     if (!avr)
     {
@@ -22,20 +31,24 @@ int main(int argc, char *argv[])
 
     while (avr_thread_alive(avr))
     {
-        sleep(4);
-        avr_set_speed(avr, 0.2, 0.3);
-        avr_set_speed(avr, 0.2, 0.3);
-        sleep(3);
-        avr_set_speed(avr, 0.0, 0.4);
-        sleep(3);
-        avr_set_speed(avr, 0.3, 0.3);
-        sleep(3);
-        avr_set_speed(avr, 0.2, 0.0);
+        if (!avr_thread_alive(avr))
+        {
+            printf("avr thread died unexpectedly\n");
+            break;
+        }
+
+        if (force_shutdown)
+        {
+            printf("Shutdown requested!\n");
+            avr_shutdown(avr);
+            break;
+        }
 
         // Sleep for 100ms
         nanosleep(&(struct timespec){0, 1e8}, NULL);
     }
 
     avr_free(avr);
+    printf("Exiting cleanly\n");
     return 0;
 }

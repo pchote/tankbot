@@ -29,14 +29,15 @@ struct avr
     bool thread_alive;
     bool shutdown;
 
-    struct serial_port *port;
+    char *serial_port;
+    uint32_t serial_baud;
 
     uint8_t send_buffer[256];
     uint8_t send_length;
     pthread_mutex_t send_mutex;
 };
 
-static void *avr_thread(void *_port);
+static void *avr_thread(void *avr);
 
 struct avr *avr_new(const char *port, uint32_t baud)
 {
@@ -44,15 +45,8 @@ struct avr *avr_new(const char *port, uint32_t baud)
     if (!avr)
         return NULL;
 
-    // Attempt to open the serial connection
-    avr->port = serial_port_open(port, baud);
-    if (!avr->port)
-    {
-        printf("Failed to open serial port\n");
-        free(avr);
-        return NULL;
-    }
-
+    avr->serial_port = strdup(port);
+    avr->serial_baud = baud;
     pthread_mutex_init(&avr->send_mutex, NULL);
 
     // Spawn the worker thread
@@ -70,7 +64,7 @@ struct avr *avr_new(const char *port, uint32_t baud)
 void avr_free(struct avr *avr)
 {
     pthread_mutex_destroy(&avr->send_mutex);
-    serial_port_close(avr->port);
+    free(avr->serial_port);
     free(avr);
 }
 
@@ -135,6 +129,14 @@ static void *avr_thread(void *_avr)
 {
     struct avr *avr = (struct avr *)_avr;
 
+    // Attempt to open the serial connection
+    struct serial_port *port = serial_port_open(avr->serial_port, avr->serial_baud);
+    if (!port)
+    {
+        printf("Failed to open serial port\n");
+        goto error;
+    }
+
     // Parsing state
     uint8_t state = 0;
     enum packet_type type;
@@ -150,10 +152,10 @@ static void *avr_thread(void *_avr)
         pthread_mutex_lock(&avr->send_mutex);
         if (avr->send_length > 0)
         {
-            ssize_t ret = serial_port_write(avr->port, avr->send_buffer, avr->send_length);
+            ssize_t ret = serial_port_write(port, avr->send_buffer, avr->send_length);
             if (ret < 0)
             {
-                printf("Write error %zd: %s", ret, serial_port_error_string(avr->port, ret));                
+                printf("Write error %zd: %s", ret, serial_port_error_string(port, ret));
                 pthread_mutex_unlock(&avr->send_mutex);
                 break;
             }
@@ -171,7 +173,7 @@ static void *avr_thread(void *_avr)
         // Check for new data
         uint8_t b;
         ssize_t r;
-        while ((r = serial_port_read(avr->port, &b, 1)) > 0)
+        while ((r = serial_port_read(port, &b, 1)) > 0)
     	{
             switch (state)
     		{
@@ -235,7 +237,7 @@ static void *avr_thread(void *_avr)
 
         if (r < 0)
         {
-            printf("Read error %zd: %s\n", r, serial_port_error_string(avr->port, r));
+            printf("Read error %zd: %s\n", r, serial_port_error_string(port, r));
             break;
         }
 
@@ -243,6 +245,9 @@ static void *avr_thread(void *_avr)
         nanosleep(&(struct timespec){0, 1e8}, NULL);
     }
 
+error:
+    if (port)
+        serial_port_close(port);
     avr->thread_alive = false;
     return NULL;
 }
