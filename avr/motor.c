@@ -19,8 +19,16 @@ const char debug_speed_fmt[] PROGMEM = "Speed set to %u%%, %u%%";
 // 0.95ms - 2ms
 #define SPEED_MIN 1900U
 #define SPEED_MAX 3999U
+
+#define SPEED_MIN_LEFT 2055U
+#define SPEED_MAX_LEFT 3699U
+
+#define SPEED_MIN_RIGHT 2485U
+#define SPEED_MAX_RIGHT 3999U
+
 #define CLAMP(x, min, max) (((x) >= (max)) ? (max) : (((x) <= (min)) ? (min) : (x)))
-#define MAP_SPEED(x) (uint16_t)(SPEED_MIN + ((uint32_t)(x)*(SPEED_MAX - SPEED_MIN) / 10000))
+#define MAP_SPEED_LEFT(x) (uint16_t)(SPEED_MIN_LEFT + ((uint32_t)(x)*(SPEED_MAX_LEFT - SPEED_MIN_LEFT) / 10000))
+#define MAP_SPEED_RIGHT(x) (uint16_t)(SPEED_MIN_RIGHT + ((uint32_t)(x)*(SPEED_MAX_RIGHT - SPEED_MIN_RIGHT) / 10000))
 
 void motor_initialize()
 {    
@@ -34,7 +42,7 @@ void motor_initialize()
     OCR1A = SPEED_MIN;
     OCR1B = SPEED_MIN;
     DDRB |= _BV(PB5) | _BV(PB6);
-    _delay_ms(2000);
+    _delay_ms(5000);
 }
 
 // Left motor on ArduPilot Mega output channel 1 (PB6)
@@ -44,8 +52,8 @@ void motor_set_speeds(uint16_t left, uint16_t right)
 {
     left = CLAMP(left, 0, 10000);
     right = CLAMP(right, 0, 10000);
-    OCR1B = MAP_SPEED(left);
-    OCR1A = MAP_SPEED(right);
+    OCR1B = MAP_SPEED_LEFT(left);
+    OCR1A = MAP_SPEED_RIGHT(right);
 
     serial_message_fmt_P(debug_speed_fmt, (uint8_t)(left / 100), (uint8_t)(right / 100));
 }
