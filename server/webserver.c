@@ -19,11 +19,15 @@
 #include <sys/time.h>
 #include <syslog.h>
 #include "webserver.h"
+#include "avr.h"
 
 #include "include/json-c/json.h"
 #include "include/libwebsockets.h"
 
 #define LOCAL_RESOURCE_PATH "/usr/share/tankbotserver"
+#define CLAMP(x, min, max) (((x) >= (max)) ? (max) : (((x) <= (min)) ? (min) : (x)))
+
+extern struct avr *avr;
 
 struct serveable {
     const char *urlpath;
@@ -159,7 +163,6 @@ static int callback_tankbot(struct libwebsocket_context *context,
             json_object *obj = json_object_new_object();
             json_object_object_add(obj, "type", json_object_new_string("m"));
             json_object_object_add(obj, "value", json_object_new_string(webserver->debug_messages[session->debug_messages_head]));
-            printf("Sending JSON: %s\n", json_object_to_json_string(obj));
 
             int n = snprintf(data, buf_length - buf_start, json_object_to_json_string(obj),
                 webserver->debug_messages[session->debug_messages_head]);
@@ -170,7 +173,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
                 lwsl_err("ERROR %d writing to socket\n", n);
                 return 1;
             }
-            printf("Sent message: %s\n", data);
+
             if (++session->debug_messages_head == DEBUG_MESSAGE_BUFFER_SIZE)
                 session->debug_messages_head = 0;
         }
@@ -180,6 +183,47 @@ static int callback_tankbot(struct libwebsocket_context *context,
 
     case LWS_CALLBACK_RECEIVE:
         printf("Got message: %s\n", (char *)in);
+
+        enum json_tokener_error err;
+    	json_object *obj = json_tokener_parse_verbose((char *)in, &err);
+
+        if (err)
+        {
+            printf("JSON parse error: %s\n", json_tokener_error_desc(err));
+            break;
+        }
+
+        json_object *type_obj;
+        if (!json_object_object_get_ex(obj, "type", &type_obj))
+        {
+            printf("Invalid JSON message\n");
+            break;
+        }
+
+        switch (json_object_get_string(type_obj)[0])
+        {
+            case 'S':
+            {
+                json_object *left_obj, *right_obj;
+                if (!json_object_object_get_ex(obj, "left", &left_obj) ||
+                    !json_object_object_get_ex(obj, "right", &right_obj))
+                {
+                    printf("Invalid JSON message\n");
+                    break;
+                }
+
+                double left = CLAMP(json_object_get_double(left_obj), 0, 1);
+                double right = CLAMP(json_object_get_double(right_obj), 0, 1);
+
+                printf("Got speeds %f %f\n", left, right);
+                avr_set_speed(avr, left, right);
+
+                break;
+            }
+        }
+
+        json_object_put(obj);
+
         break;
 
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
