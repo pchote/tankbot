@@ -170,7 +170,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
                 lwsl_err("ERROR %d writing to socket\n", n);
                 return 1;
             }
-            printf("Sent message: %s", data);
+            printf("Sent message: %s\n", data);
             if (++session->debug_messages_head == DEBUG_MESSAGE_BUFFER_SIZE)
                 session->debug_messages_head = 0;
         }
@@ -179,6 +179,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
         break;
 
     case LWS_CALLBACK_RECEIVE:
+        printf("Got message: %s\n", (char *)in);
         break;
 
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:

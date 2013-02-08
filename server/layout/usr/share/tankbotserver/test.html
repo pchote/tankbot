@@ -14,14 +14,19 @@
 <canvas id="canvas" width="1024" height="768"></canvas>
 
 <script>
+var controlDragMaximum = 300;
 
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext('2d');
 
+var socket;
 var connectionAlive = false;
+var leftMotorSpeed = 0;
+var rightMotorSpeed = 0;
 
-function tick() {
-    window.requestAnimationFrame(tick);
+
+function render() {
+    window.requestAnimationFrame(render);
 
 	ctx.fillStyle = '#AAA';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -33,21 +38,34 @@ function tick() {
 
 	var x = 10;
 	var y = 40;
+
     ctx.fillText(headline, x, y);
 	x += ctx.measureText(headline).width;
-	if (connectionAlive)
-	{
+	if (connectionAlive) {
 	    ctx.fillStyle = "green";
 	    ctx.fillText("Active", x, y);
-	}
-	else
-	{
+	} else {
 	    ctx.fillStyle = "red";
 	    ctx.fillText("Inactive", x, y);
 	}
 
-	if (controlTouch !== null)
-	{
+	x = 10; y += 20;
+	headline = "Left Motor: ";
+
+    ctx.fillStyle = "green";
+    ctx.fillText(headline, x, y);
+	x += ctx.measureText(headline).width;
+    ctx.fillText(leftMotorSpeed+"%", x, y);
+
+	x = 10; y += 20;
+	headline = "Right Motor: ";
+
+    ctx.fillStyle = "green";
+    ctx.fillText(headline, x, y);
+	x += ctx.measureText(headline).width;
+    ctx.fillText(rightMotorSpeed+"%", x, y);
+
+	if (controlTouch) {
 		ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.moveTo(controlTouch.startX, controlTouch.startY);
@@ -55,13 +73,57 @@ function tick() {
         ctx.stroke();
 	}
 
-	if (cameraTouch !== null)
-	{
+	if (cameraTouch) {
 		ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.moveTo(cameraTouch.startX, cameraTouch.startY);
         ctx.lineTo(cameraTouch.curX, cameraTouch.curY);
         ctx.stroke();
+	}
+}
+
+function sendPacket(p)
+{
+	if (connectionAlive)
+		socket.send(JSON.stringify(p, function(k, v) {
+	    	return v.toFixed ? Number(v.toFixed(4)) : v;
+		}));
+}
+
+function tick() {
+    window.setTimeout(tick, 200);
+	if (controlTouch) {
+		var dx = controlTouch.curX - controlTouch.startX;
+		var dy = controlTouch.curY - controlTouch.startY;
+		var length = Math.sqrt(dx*dx + dy*dy) / controlDragMaximum;
+		if (length > 1)
+			length = 1;
+
+		// TODO: Tweak the mapping of stick angle -> steering
+		var angle = Math.atan2(dx, -dy);
+		var forward = length*Math.cos(angle);
+		var steer = length*Math.sin(angle);
+
+		sendPacket({
+			"type": 'S',
+			"left": forward + steer,
+			"right": forward - steer
+		});
+
+		// TODO: These should be set by packets from AVR
+		leftMotorSpeed = forward + steer;
+		rightMotorSpeed = forward - steer;
+
+	} else {
+		sendPacket({
+			"type": 'S',
+			"left": 0,
+			"right": 0
+		});
+
+		// TODO: These should be set by packets from AVR
+		leftMotorSpeed = 0;
+		rightMotorSpeed = 0;
 	}
 }
 
@@ -74,13 +136,13 @@ function setup() {
 	// Initialize websocket if running remotely
 	if (document.URL.substring(0, 4) != 'file')
 	{
-		var socket_lm = new WebSocket("ws://"+ document.URL.substr(7).split('/')[0], "tankbot");
+		socket = new WebSocket("ws://"+ document.URL.substr(7).split('/')[0], "tankbot");
 
-		socket_lm.onopen = function() {
+		socket.onopen = function() {
 			connectionAlive = true;
 		}
 
-		socket_lm.onmessage = function got_packet(packet) {
+		socket.onmessage = function got_packet(packet) {
 			var data = JSON.parse(packet.data);
 
 			switch(data.type) {
@@ -90,7 +152,7 @@ function setup() {
 			}
 		}
 
-		socket_lm.onclose = function(){
+		socket.onclose = function(){
 			connectionAlive = false;
 		}
 	}
@@ -106,6 +168,7 @@ function setup() {
 
 	// Start main loop
 	tick();
+	render();
 }
 
 var controlTouch = null;
