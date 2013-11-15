@@ -110,7 +110,8 @@ static int callback_http(struct libwebsocket_context *context,
     case LWS_CALLBACK_HTTP:
     {
         size_t n = 0;
-        for (; n < (sizeof(whitelist) / sizeof(whitelist[0]) - 1); n++)
+        size_t size = (sizeof(whitelist) / sizeof(whitelist[0]) - 1);
+        for (; n < size; n++)
             if (in && strcmp((const char *)in, whitelist[n].urlpath) == 0)
                 break;
 
@@ -168,6 +169,8 @@ static int callback_tankbot(struct libwebsocket_context *context,
                 webserver->debug_messages[session->debug_messages_head]);
             json_object_put(obj);
 
+            printf("Sending message: %s\n", (char *)data);
+
             n = libwebsocket_write(wsi, (unsigned char *)data, n, LWS_WRITE_TEXT);
             if (n < 0) {
                 lwsl_err("ERROR %d writing to socket\n", n);
@@ -182,8 +185,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
         break;
 
     case LWS_CALLBACK_RECEIVE:
-        printf("Got message: %s\n", (char *)in);
-
+    {
         enum json_tokener_error err;
     	json_object *obj = json_tokener_parse_verbose((char *)in, &err);
 
@@ -215,7 +217,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
                 double left = CLAMP(json_object_get_double(left_obj), 0, 1);
                 double right = CLAMP(json_object_get_double(right_obj), 0, 1);
 
-                printf("Got speeds %f %f\n", left, right);
+                //printf("Got speeds %f %f\n", left, right);
                 avr_set_speed(avr, left, right);
 
                 break;
@@ -225,7 +227,7 @@ static int callback_tankbot(struct libwebsocket_context *context,
         json_object_put(obj);
 
         break;
-
+    }
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
         dump_handshake_info((struct lws_tokens *)(long)user);
         break;

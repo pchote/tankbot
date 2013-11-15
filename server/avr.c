@@ -120,7 +120,7 @@ static void parse_packet(struct avr *avr, enum packet_type type, union packet_da
                 putchar(data.debug.message[i]);
 
             // TODO: Relying on an extern global isn't great.
-            webserver_send_debug(webserver, data.debug.message, length);
+            //webserver_send_debug(webserver, data.debug.message, length);
             printf("\n");
         }
         break;
@@ -171,6 +171,8 @@ static void *avr_thread(void *_avr)
                 pthread_mutex_unlock(&avr->send_mutex);
                 break;
             }
+
+            printf("Sent %zd bytes\n", ret);
             avr->send_length = 0;
         }
         pthread_mutex_unlock(&avr->send_mutex);
@@ -276,5 +278,7 @@ void avr_set_speed(struct avr *avr, double left, double right)
         .left = (uint16_t)(10000*left),
         .right = (uint16_t)(10000*right)
     };
+
+    printf("Sending speed packet: %u %u\n", speed.left, speed.right);
     queue_data(avr, SPEED, &speed, sizeof(struct packet_speed));
 }
