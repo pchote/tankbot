@@ -144,7 +144,7 @@ static void *avr_thread(void *_avr)
 
     // Parsing state
     uint8_t state = 0;
-    enum packet_type type;
+    enum packet_type type = 0;
     uint8_t checksum = 0;
     uint8_t length = 0;
     uint8_t read = 0;
@@ -275,8 +275,8 @@ bool avr_thread_alive(struct avr *avr)
 void avr_set_speed(struct avr *avr, double left, double right)
 {
     struct packet_speed speed = {
-        .left = (uint16_t)(10000*left),
-        .right = (uint16_t)(10000*right)
+        .left = (int16_t)(10000*left),
+        .right = (int16_t)(10000*right)
     };
 
     printf("Sending speed packet: %u %u\n", speed.left, speed.right);

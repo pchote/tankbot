@@ -214,10 +214,10 @@ static int callback_tankbot(struct libwebsocket_context *context,
                     break;
                 }
 
-                double left = CLAMP(json_object_get_double(left_obj), 0, 1);
-                double right = CLAMP(json_object_get_double(right_obj), 0, 1);
+                double left = CLAMP(json_object_get_double(left_obj), -1, 1);
+                double right = CLAMP(json_object_get_double(right_obj), -1, 1);
 
-                //printf("Got speeds %f %f\n", left, right);
+                printf("Got speeds %f %f\n", left, right);
                 avr_set_speed(avr, left, right);
 
                 break;

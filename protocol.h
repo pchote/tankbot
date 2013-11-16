@@ -21,9 +21,9 @@ enum packet_type
 
 struct __attribute__((__packed__)) packet_speed
 {
-    // using 0 - 10000 to represent fixed point values 0 - 1.0000
-    uint16_t left;
-    uint16_t right;
+    // using -10000 - 10000 to represent fixed point values -1.0000 - 1.0000
+    int16_t left;
+    int16_t right;
 };
 
 #define MAX_MESSAGE_LENGTH 200

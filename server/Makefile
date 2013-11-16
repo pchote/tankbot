@@ -1,5 +1,4 @@
-THEOS_DEVICE_IP = 10.0.2.3
-
+THEOS_DEVICE_IP = 10.0.2.16
 include theos/makefiles/common.mk
 
 TOOL_NAME = tankbotserver
